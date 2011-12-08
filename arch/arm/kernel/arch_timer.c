@@ -408,7 +408,7 @@ static void __init arch_timer_counter_init(void)
 	register_current_timer_delay(&arch_delay_timer);
 }
 
-static int __init arch_timer_common_register(void)
+int __init arch_timer_register(struct resource *res, int res_nr)
 {
 	int err;
 
