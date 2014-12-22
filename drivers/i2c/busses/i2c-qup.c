@@ -707,7 +707,7 @@ static void qup_i2c_recover_bus_busy(struct qup_i2c_dev *dev)
 	gpio_dat = dev->i2c_gpios[1];
 
 	if ((gpio_clk == -1) && (gpio_dat == -1)) {
-		dev_err(dev->dev, "Recovery failed due to undefined GPIO's\n");
+		dev_err(dev->dev, "Recovery failed due to undefined GPIOs\n");
 		return;
 	}
 
