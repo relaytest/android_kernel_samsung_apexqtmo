@@ -11,7 +11,6 @@
  * GNU General Public License for more details.
  *
  */
-
 #include <linux/kernel.h>
 #include <linux/platform_device.h>
 #include <linux/io.h>
@@ -26,7 +25,6 @@
 #include <mach/board.h>
 #include <mach/gpio.h>
 #include <mach/msm8960-gpio.h>
-#include <asm/system_info.h>
 
 #include "devices-msm8x60.h"
 #include "board-8960.h"
@@ -39,38 +37,6 @@
 #define SEC_BATTERY_PMIC_NAME ""
 
 static unsigned int sec_bat_recovery_mode;
-/* Note, the following types must be synced to those
-defined in power_supply.h */
-
-static sec_charging_current_t charging_current_table[] = {
-	{0,	0,	0,	0}, /* UNKNOWN */
-	{0,	0,	0,	0}, /* BATTERY */
-	{0,	0,	0,	0}, /* UPS */
-#ifdef CONFIG_MACH_EXPRESS
-	{1000,	1050,	200,	0}, /* MAINS */
-#else
-	{1000,	950,	200,	0}, /* MAINS */
-#endif
-	{1000,	500,	200,	0}, /* USB */
-	{1000,	500,	200,	0}, /* USB_DCP */
-	{1000,	500,	200,	0}, /* USB_CDP */
-	{1000,	500,	200,	0}, /* USB ACA */
-	{0,	0,	0,	0}, /* BMS */
-	{1000,	700,	200,	0}, /* MISC */
-#ifdef CONFIG_MACH_EXPRESS
-	{1000,	1050,	200,	0}, /* CARDOCK */
-	{1000,	1050,	200,	0}, /* UARTOFF */
-#else
-	{1000,	950,	200,	0}, /* CARDOCK */
-	{1000,	950,	200,	0}, /* UARTOFF */
-#endif
-	{0,	0,	0,	0}, /* WIRELESS/DUMMY */
-#ifdef CONFIG_MACH_EXPRESS
-	{1000,	-500,	0,	0}, /* OTG */
-#else
-	{0,	0,	0,	0}, /* OTG */
-#endif
-};
 
 static int msm_otg_pmic_gpio_config(
 		int gpio, int direction, int pullup, int value)
@@ -114,8 +80,7 @@ static bool sec_bat_adc_ap_init(
 static bool sec_bat_adc_ap_exit(void) {return true; }
 static int sec_bat_adc_ap_read(unsigned int channel)
 {
-	int rc = 0;
-	int data = 0;
+	int rc, data;
 	struct pm8xxx_adc_chan_result result;
 
 	switch (channel) {
@@ -191,7 +156,7 @@ static bool sec_chg_gpio_init(void)
 	gpio_set_value(GPIO_FUELGAUGE_I2C_SCL, 1);
 	gpio_set_value(GPIO_FUELGAUGE_I2C_SDA, 1);
 
-	if (system_rev >= BOARD_REV02)
+	if (system_rev >= BOARD_REV01)
 		msm_otg_pmic_gpio_config(PMIC_GPIO_CHG_EN,
 			PM_GPIO_DIR_OUT, PM_GPIO_PULL_NO, 1);
 
@@ -249,9 +214,7 @@ static int sec_bat_check_cable_callback(void)
 	 * Add msleep to fix the this issue.
 	 */
 	msleep(500);
-
-/* Detect dumb chargers as UARTOFF type */
-
+	
 	if (current_cable_type ==
 		POWER_SUPPLY_TYPE_BATTERY &&
 		gpio_get_value_cansleep(
@@ -289,10 +252,10 @@ static bool sec_bat_check_cable_result_callback(
 	case POWER_SUPPLY_TYPE_BATTERY:
 		pr_info("%s set vbus cut\n",
 			__func__);
-//		msm_otg_set_charging_state(0);
+	//	msm_otg_set_charging_state(0);
 		break;
 	case POWER_SUPPLY_TYPE_MAINS:
-//		msm_otg_set_charging_state(1);
+	//	msm_otg_set_charging_state(1);
 		break;
 	default:
 		pr_err("%s cable type (%d)\n",
@@ -312,16 +275,27 @@ static bool sec_bat_check_callback(void)
 
 	present = 0;
 
-	if (sec_bat_recovery_mode == 1) {
-		pr_info("%s : recovery_mode, skip batt check\n", __func__);
+	if (sec_bat_recovery_mode == 1 || system_state == SYSTEM_RESTART) {
+		pr_info("%s : recovery/restart, skip batt check\n", __func__);
 		present = 1;
+		pm8921_enable_batt_therm(0);
 		return present;
 	}
 
 	pm8921_enable_batt_therm(1);
-	/* check battery 5 times */
-	for (i = 0; i < 5; i++) {
-		msleep(500);
+	/* check battery 10 times */
+	for (i = 0; i < 10; i++) {
+		msleep(200);
+
+		if (sec_bat_recovery_mode == 1
+			|| system_state == SYSTEM_RESTART) {
+			pr_info("%s : recovery/restart, skip batt check\n",
+					__func__);
+			present = 1;
+			pm8921_enable_batt_therm(0);
+			break;
+		}
+
 		present = !gpio_get_value_cansleep(
 			PM8921_GPIO_PM_TO_SYS(
 			PMIC_GPIO_BATT_INT));
@@ -366,36 +340,22 @@ static bool sec_bat_get_temperature_callback(
 		union power_supply_propval *val) {return true; }
 static bool sec_fg_fuelalert_process(bool is_fuel_alerted) {return true; }
 
-static const sec_bat_adc_table_data_t temp_table[] = {
-	{26546,	800},
-	{26832,	750},
-	{27208,	700},
-	{27618,	650},
-	{27893,	620},
-	{28164,	600},
-	{28387,	580},
-	{28734,	550},
-	{29448,	500},
-	{29868,	470},
-	{30227,	450},
-	{30568,	430},
-	{31072,	400},
-	{31888,	350},
-	{33012,	300},
-	{33956,	250},
-	{34976,	200},
-	{36285,	150},
-	{37029,	100},
-	{37826,	50},
-	{38554,	20},
-	{39085,	0},
-	{39560,	-30},
-	{39864,	-50},
-	{40550,	-100},
-	{41148,	-150},
-	{41646,	-200},
-	{41910,	-250},
-	{42206,	-300},
+static const int temp_table[][2] = {
+	{27592,	650},
+	{27999,	600},
+	{28563,	550},
+	{29211,	500},
+	{29948,	450},
+	{30769,	400},
+	{36990,	100},
+	{37991,	50},
+	{38910,	0},
+	{39658,	-50},
+	{40443,	-100},
+	{41034,	-150},
+	{41523,	-200},
+	{41825,	-250},
+	{42158,	-300},
 };
 
 /* ADC region should be exclusive */
@@ -413,6 +373,22 @@ static sec_bat_adc_region_t cable_adc_value_table[] = {
 	{0,	0},
 };
 
+static sec_charging_current_t charging_current_table[] = {
+	{0,	0,	0,	0},
+	{0,	0,	0,	0},
+	{0,	0,	0,	0},
+	{1000,	1050,	150,	0},
+	{1000,	500,	150,	0},
+	{1000,	500,	150,	0},
+	{1000,	500,	150,	0},
+	{1000,	500,	150,	0},
+	{1000,	700,	150,	0},
+	{0,	0,	0,	0},
+	{1000,	1050,	150,	0},
+	{0,	0,	0,	0},
+	{0,	0,	0,	0},
+};
+
 static int polling_time_table[] = {
 	10,	/* BASIC */
 	30,	/* CHARGING */
@@ -422,18 +398,13 @@ static int polling_time_table[] = {
 };
 
 /* for MAX17048 */
-static struct battery_data_t apexq_battery_data[] = {
+static struct battery_data_t comanche_battery_data[] = {
 	/* SDI battery data (High voltage 4.35V) */
 	{
-#ifdef CONFIG_MACH_EXPRESS
-		.RCOMP0 = 0x62,
-		.RCOMP_charging = 0x6A,
-#else
-		.RCOMP0 = 0x55,
-		.RCOMP_charging = 0x55,
-#endif
-		.temp_cohot = -300,
-		.temp_cocold = -6075,
+		.RCOMP0 = 0x57,
+		.RCOMP_charging = 0x67,
+		.temp_cohot = -100,
+		.temp_cocold = -4500,
 		.is_using_model_data = true,
 		.type_str = "SDI",
 	}
@@ -499,7 +470,7 @@ static sec_battery_platform_data_t sec_battery_pdata = {
 	/* Battery */
 	.vendor = "SDI SDI",
 	.technology = POWER_SUPPLY_TECHNOLOGY_LION,
-	.battery_data = (void *)apexq_battery_data,
+	.battery_data = (void *)comanche_battery_data,
 	.bat_gpio_ta_nconnected = 0,
 	.bat_polarity_ta_nconnected = 0,
 	.bat_irq =
@@ -540,51 +511,32 @@ static sec_battery_platform_data_t sec_battery_pdata = {
 		sizeof(temp_table)/sizeof(sec_bat_adc_table_data_t),
 
 	.temp_check_type = SEC_BATTERY_TEMP_CHECK_TEMP,
-#ifdef CONFIG_MACH_EXPRESS
-	.temp_check_count = 1,
-	.temp_high_threshold_event = 610,
-	.temp_high_recovery_event = 400,
-	.temp_low_threshold_event = -50,
-	.temp_low_recovery_event = -20,
-	.temp_high_threshold_normal = 450,
-	.temp_high_recovery_normal = 400,
-	.temp_low_threshold_normal = -50,
-	.temp_low_recovery_normal = -20,
-	.temp_high_threshold_lpm = 450,
-	.temp_high_recovery_lpm = 400,
-	.temp_low_threshold_lpm = -50,
-	.temp_low_recovery_lpm = -20,
-#else
 	.temp_check_count = 2,
-	.temp_high_threshold_event = 630,
-	.temp_high_recovery_event = 450,
+	.temp_high_threshold_event = 650,
+	.temp_high_recovery_event = 415,
 	.temp_low_threshold_event = -30,
 	.temp_low_recovery_event = 0,
-	.temp_high_threshold_normal = 470,
-	.temp_high_recovery_normal = 430,
+	.temp_high_threshold_normal = 465,
+	.temp_high_recovery_normal = 415,
 	.temp_low_threshold_normal = -30,
 	.temp_low_recovery_normal = 0,
-	.temp_high_threshold_lpm = 470,
-	.temp_high_recovery_lpm = 440,
-	.temp_low_threshold_lpm = -40,
-	.temp_low_recovery_lpm = -10,
-#endif
+	.temp_high_threshold_lpm = 450,
+	.temp_high_recovery_lpm = 420,
+	.temp_low_threshold_lpm = -30,
+	.temp_low_recovery_lpm = 0,
 
 	.full_check_type = SEC_BATTERY_FULLCHARGED_CHGPSY,
 	.full_check_type_2nd = SEC_BATTERY_FULLCHARGED_NONE,
 	.full_check_count = 3,
 	.chg_gpio_full_check = 0,
 	.chg_polarity_full_check = 1,
-	.full_condition_type = SEC_BATTERY_FULL_CONDITION_SOC |
-		SEC_BATTERY_FULL_CONDITION_VCELL,
-	.full_condition_soc = 97,
-	.full_condition_vcell = 4280,
+	.full_condition_type = 0,
 
 	.recharge_condition_type =
 		SEC_BATTERY_RECHARGE_CONDITION_SOC |
 		SEC_BATTERY_RECHARGE_CONDITION_VCELL,
 	.recharge_condition_soc = 98,
-	.recharge_condition_vcell = 4280,
+	.recharge_condition_vcell = 4165,
 
 	.charging_total_time = 6 * 60 * 60,
 	.recharging_total_time = 90 * 60,
@@ -601,27 +553,18 @@ static sec_battery_platform_data_t sec_battery_pdata = {
 		SEC_FUELGAUGE_CAPACITY_TYPE_SCALE |
 		SEC_FUELGAUGE_CAPACITY_TYPE_DYNAMIC_SCALE,
 		/* SEC_FUELGAUGE_CAPACITY_TYPE_ATOMIC, */
-#ifdef CONFIG_MACH_EXPRESS
-	.capacity_max = 960,
-#else
 	.capacity_max = 990,
-#endif
 	.capacity_max_margin = 50,
-	.capacity_min = 11,
+	.capacity_min = 0,
 
 	/* Charger */
-	.charger_name = "sec-charger",
 	.chg_gpio_en = PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_CHG_EN),
 	.chg_polarity_en = 0,
 	.chg_gpio_status = 0,
 	.chg_polarity_status = 0,
 	.chg_irq = 0,
 	.chg_irq_attr = 0,
-#ifdef CONFIG_MACH_EXPRESS
-	.chg_float_voltage = 4350,
-#else
-	.chg_float_voltage = 4360,
-#endif
+	.chg_float_voltage = 4200,
 };
 
 static struct platform_device sec_device_battery = {
@@ -682,12 +625,9 @@ void __init msm8960_init_battery(void)
 {
 	/* board dependent changes in booting */
 	switch (system_rev) {
-	case BOARD_REV00:
 	case BOARD_REV01:
-		sec_battery_pdata.chg_float_voltage = 4200;
-		sec_battery_pdata.recharge_condition_vcell = 4150;
-		sec_battery_pdata.capacity_min = 0;
-		apexq_battery_data[0].temp_cohot = -300;
+		sec_battery_pdata.full_check_type =
+			SEC_BATTERY_FULLCHARGED_CHGGPIO;
 		break;
 	}
 
