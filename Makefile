@@ -245,8 +245,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -fgcse-las -fgraphite -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
-HOSTCXXFLAGS = -O3 -fgcse-las -fgraphite -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer -fgcse-las
+HOSTCXXFLAGS = -O3 -fgcse-las 
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -381,11 +381,11 @@ LINUXINCLUDE    := -I$(srctree)/arch/$(hdr-arch)/include \
 
 KBUILD_CPPFLAGS := -D__KERNEL__
 
-CFLAGS_A15 = -mtune=cortex-a15 -mfpu=neon -funsafe-math-optimizations
+CFLAGS_A15 = -mtune=cortex-a15 -mfpu=neon -funsafe-math-optimizations -fgraphite -floop-flatten -floop-parallelize-all -ftree-loop-linear -floop-interchange -floop-strip-mine -floop-block
 CFLAGS_MODULO = -fmodulo-sched -fmodulo-sched-allow-regmoves
 KERNEL_MODS        = $(CFLAGS_A15) $(CFLAGS_MODULO)
  
-KBUILD_CFLAGS   := -O3 -funswitch-loops \
+KBUILD_CFLAGS   := $(KERNEL_MODS) -O3 -funswitch-loops \
  		           -Wundef -Wstrict-prototypes -Wno-trigraphs \
  		           -fno-strict-aliasing -fno-common \
  		           -Werror-implicit-function-declaration \
