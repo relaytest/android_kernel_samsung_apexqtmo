@@ -198,7 +198,7 @@ static int cold_boot_flags[] = {
 	SCM_FLAG_COLDBOOT_CPU3,
 };
 
-int boot_secondary(unsigned int cpu, struct task_struct *idle)
+int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 {
 	int ret;
 	unsigned int flag = 0;
