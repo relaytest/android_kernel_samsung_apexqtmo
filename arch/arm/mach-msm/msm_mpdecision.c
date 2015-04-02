@@ -661,12 +661,12 @@ static ssize_t show_##file_name						\
 }
 show_one_twts(twts_threshold_0, 0);
 show_one_twts(twts_threshold_1, 1);
-show_one_twts(twts_threshold_2, 2);
-show_one_twts(twts_threshold_3, 3);
-show_one_twts(twts_threshold_4, 4);
-show_one_twts(twts_threshold_5, 5);
-show_one_twts(twts_threshold_6, 6);
-show_one_twts(twts_threshold_7, 7);
+//show_one_twts(twts_threshold_2, 2);
+//show_one_twts(twts_threshold_3, 3);
+//show_one_twts(twts_threshold_4, 4);
+//show_one_twts(twts_threshold_5, 5);
+//show_one_twts(twts_threshold_6, 6);
+//show_one_twts(twts_threshold_7, 7);
 
 #define store_one_twts(file_name, arraypos)				\
 static ssize_t store_##file_name					\
@@ -683,12 +683,12 @@ static ssize_t store_##file_name					\
 define_one_global_rw(file_name);
 store_one_twts(twts_threshold_0, 0);
 store_one_twts(twts_threshold_1, 1);
-store_one_twts(twts_threshold_2, 2);
-store_one_twts(twts_threshold_3, 3);
-store_one_twts(twts_threshold_4, 4);
-store_one_twts(twts_threshold_5, 5);
-store_one_twts(twts_threshold_6, 6);
-store_one_twts(twts_threshold_7, 7);
+//store_one_twts(twts_threshold_2, 2);
+//store_one_twts(twts_threshold_3, 3);
+//store_one_twts(twts_threshold_4, 4);
+//store_one_twts(twts_threshold_5, 5);
+//store_one_twts(twts_threshold_6, 6);
+//store_one_twts(twts_threshold_7, 7);
 
 #define show_one_nwns(file_name, arraypos)				\
 static ssize_t show_##file_name						\
@@ -698,12 +698,12 @@ static ssize_t show_##file_name						\
 }
 show_one_nwns(nwns_threshold_0, 0);
 show_one_nwns(nwns_threshold_1, 1);
-show_one_nwns(nwns_threshold_2, 2);
-show_one_nwns(nwns_threshold_3, 3);
-show_one_nwns(nwns_threshold_4, 4);
-show_one_nwns(nwns_threshold_5, 5);
-show_one_nwns(nwns_threshold_6, 6);
-show_one_nwns(nwns_threshold_7, 7);
+//show_one_nwns(nwns_threshold_2, 2);
+//show_one_nwns(nwns_threshold_3, 3);
+//show_one_nwns(nwns_threshold_4, 4);
+//show_one_nwns(nwns_threshold_5, 5);
+//show_one_nwns(nwns_threshold_6, 6);
+//show_one_nwns(nwns_threshold_7, 7);
 
 #define store_one_nwns(file_name, arraypos)				\
 static ssize_t store_##file_name					\
@@ -720,12 +720,12 @@ static ssize_t store_##file_name					\
 define_one_global_rw(file_name);
 store_one_nwns(nwns_threshold_0, 0);
 store_one_nwns(nwns_threshold_1, 1);
-store_one_nwns(nwns_threshold_2, 2);
-store_one_nwns(nwns_threshold_3, 3);
-store_one_nwns(nwns_threshold_4, 4);
-store_one_nwns(nwns_threshold_5, 5);
-store_one_nwns(nwns_threshold_6, 6);
-store_one_nwns(nwns_threshold_7, 7);
+//store_one_nwns(nwns_threshold_2, 2);
+//store_one_nwns(nwns_threshold_3, 3);
+//store_one_nwns(nwns_threshold_4, 4);
+//store_one_nwns(nwns_threshold_5, 5);
+//store_one_nwns(nwns_threshold_6, 6);
+//store_one_nwns(nwns_threshold_7, 7);
 
 static ssize_t show_idle_freq (struct kobject *kobj, struct attribute *attr,
 				char *buf)
@@ -1012,20 +1012,20 @@ static struct attribute *msm_mpdec_attributes[] = {
 	&enabled.attr,
 	&twts_threshold_0.attr,
 	&twts_threshold_1.attr,
-	&twts_threshold_2.attr,
-	&twts_threshold_3.attr,
-	&twts_threshold_4.attr,
+	/*&twts_threshold_2.attr,
+	//&twts_threshold_3.attr,
+	//&twts_threshold_4.attr,
 	&twts_threshold_5.attr,
 	&twts_threshold_6.attr,
-	&twts_threshold_7.attr,
+	&twts_threshold_7.attr,*/
 	&nwns_threshold_0.attr,
 	&nwns_threshold_1.attr,
-	&nwns_threshold_2.attr,
+	/*&nwns_threshold_2.attr,
 	&nwns_threshold_3.attr,
 	&nwns_threshold_4.attr,
 	&nwns_threshold_5.attr,
 	&nwns_threshold_6.attr,
-	&nwns_threshold_7.attr,
+	&nwns_threshold_7.attr,*/
 #ifdef CONFIG_MSM_MPDEC_INPUTBOOST_CPUMIN
 	&boost_freqs.attr,
 	&boost_enabled.attr,
