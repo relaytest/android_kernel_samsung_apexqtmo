@@ -667,7 +667,7 @@ VOS_STATUS WDA_prepareConfigTLV(v_PVOID_t pVosContext,
    {
       VOS_TRACE( VOS_MODULE_ID_WDA, VOS_TRACE_LEVEL_ERROR,
                     "Failed to get value for WNI_CFG_MAX_MEDIUM_TIME");
-      goto handle_failure;
+      /* Ignore error: this value isn't in stock NV image */
    }
    tlvStruct = (tHalCfg *)(( (tANI_U8 *) tlvStruct 
                             + sizeof(tHalCfg) + tlvStruct->length)); 
