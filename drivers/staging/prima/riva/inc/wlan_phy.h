@@ -46,9 +46,9 @@
 
 Contains definitions of all PHY related structures that aree needed by FTM/PTT
 
-Copyright (c) 2007 Qualcomm Technologies, Inc. All Rights Reserved. 
-Qualcomm Technologies Proprietary and Confidential
-
+Copyright (c) 2007 QUALCOMM Incorporated. 
+All Rights Reserved. 
+Qualcomm Confidential and Proprietary 
 ============================================================================*/
 #include <wlan_nv.h>
  
@@ -104,11 +104,7 @@ typedef enum {
    PHYDBG_PREAMBLE_GREENFIELD,
    PHYDBG_PREAMBLE_MIXED,
    PHYDBG_PREAMBLE_SHORTB,
-   PHYDBG_PREAMBLE_LONGB,
-
-   PHYDBG_LDPC_PREAMBLE_OFDM = 0x10,
-   PHYDBG_LDPC_PREAMBLE_GREENFIELD = 0x11,
-   PHYDBG_LDPC_PREAMBLE_MIXED = 0x12
+   PHYDBG_PREAMBLE_LONGB
 } ePhyDbgPreamble;
 
 
@@ -915,15 +911,5 @@ typedef enum
 
 #define MAX_TPC_GAIN_LUT_DBM_2DEC_PLACES    (MAX_TPC_GAIN_LUT_DBM * 100)
 #define MIN_TPC_GAIN_LUT_DBM_2DEC_PLACES    (MIN_TPC_GAIN_LUT_DBM * 100)
-
-typedef enum
-{
-    RF_BANDWIDTH_20MHZ = 20,
-    RF_BANDWIDTH_40MHZ = 40,
-    RF_BANDWIDTH_80MHZ = 80,
-    RF_MIN_BANDWIDTH = RF_BANDWIDTH_20MHZ,
-    RF_MAX_BANDWIDTH = RF_BANDWIDTH_80MHZ,
-    RF_BANDWIDTH_INVALID = 0x7FFFFFFF
-}eRfBandwidth;
 
 #endif /* WLAN_PHY_H */

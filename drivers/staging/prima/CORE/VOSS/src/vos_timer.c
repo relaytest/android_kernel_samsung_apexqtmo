@@ -40,25 +40,17 @@
  */
 
 /**=========================================================================
-
+  
   \file  vos_timer.c
-
+  
   \brief virtual Operating System Servies (vOS)
-
+               
    Definitions for vOSS Timer services
-<<<<<<< HEAD:CORE/VOSS/src/vos_timer.c
   
    Copyright 2008 (c) Qualcomm, Incorporated.  All Rights Reserved.
    
    Qualcomm Confidential and Proprietary.
   
-=======
-
-   Copyright 2008 (c) Qualcomm Technologies, Inc.  All Rights Reserved.
-
-   Qualcomm Technologies Confidential and Proprietary.
-
->>>>>>> f7413b6... wlan: voss: remove obsolete "INTEGRATED_SOC" featurization:prima/CORE/VOSS/src/vos_timer.c
   ========================================================================*/
 
 /* $Header$ */
@@ -207,14 +199,7 @@ static void vos_linux_timer_callback ( v_U32_t data )
 
    tryAllowingSleep( type );
 
-   if (callback == NULL)
-   {
-       VOS_ASSERT(0);
-       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-                 "%s: No TIMER callback, Could not enqueue timer to any queue",
-                 __func__);
-       return;
-   }
+   VOS_ASSERT( callback ); 
 
    // If timer has expired then call vos_client specific callback 
    if ( vos_sched_is_tx_thread( threadId ) )
@@ -230,6 +215,7 @@ static void vos_linux_timer_callback ( v_U32_t data )
       if(vos_tx_mq_serialize( VOS_MQ_ID_SYS, &msg ) == VOS_STATUS_SUCCESS)
          return;
    }
+#ifdef FEATURE_WLAN_INTEGRATED_SOC
    else if ( vos_sched_is_rx_thread( threadId ) )
    {
       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO, 
@@ -243,6 +229,7 @@ static void vos_linux_timer_callback ( v_U32_t data )
       if(vos_rx_mq_serialize( VOS_MQ_ID_SYS, &msg ) == VOS_STATUS_SUCCESS)
          return;
    }
+#endif
    else 
    {
       VOS_TRACE( VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_INFO,
@@ -730,12 +717,9 @@ VOS_STATUS vos_timer_start( vos_timer_t *timer, v_U32_t expirationTime )
    // Check if timer refers to an uninitialized object
    if ( LINUX_TIMER_COOKIE != timer->platformInfo.cookie )
    {
-      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR,
-          "%s: Cannot start uninitialized timer",__func__);
-      if ( LINUX_INVALID_TIMER_COOKIE != timer->platformInfo.cookie )
-      {
-         VOS_ASSERT(0);
-      }
+      VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR, 
+                "%s: Cannot start uninitialized timer",__func__);
+      VOS_ASSERT(0);
       return VOS_STATUS_E_INVAL;
    }
 
@@ -830,11 +814,8 @@ VOS_STATUS vos_timer_stop ( vos_timer_t *timer )
    if ( LINUX_TIMER_COOKIE != timer->platformInfo.cookie )
    {
       VOS_TRACE(VOS_MODULE_ID_VOSS, VOS_TRACE_LEVEL_ERROR, 
-          "%s: Cannot stop uninitialized timer",__func__);
-      if ( LINUX_INVALID_TIMER_COOKIE != timer->platformInfo.cookie )
-      {
-         VOS_ASSERT(0);
-      }
+                "%s: Cannot stop uninitialized timer",__func__);
+      VOS_ASSERT(0);
       return VOS_STATUS_E_INVAL;
    }
       

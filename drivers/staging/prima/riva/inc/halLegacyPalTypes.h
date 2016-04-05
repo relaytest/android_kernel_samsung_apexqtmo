@@ -55,7 +55,7 @@
  *
  *=========================================================================*/
 
-#include "qwlanfw_defs.h"
+#include "wlan_defs.h"
 
 /* Common type definitions */
 typedef uint8     tANI_U8;

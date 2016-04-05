@@ -39,7 +39,6 @@
  * PERFORMANCE OF THIS SOFTWARE.
  */
 
-
 /** ------------------------------------------------------------------------- *
     ------------------------------------------------------------------------- *
 
@@ -59,6 +58,15 @@
 #ifndef HALTYPES_H
 #define HALTYPES_H
 #ifndef WINXP_APPS_BUILD    //TODO: this header dependency does not belong in this file
+#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
+#include "wlan_qct_bal.h"
+
+#ifdef WLAN_HAL_VOLANS
+#include "volansDefs.h"
+#else
+#include "libraDefs.h"
+#endif
+#endif
 
 #endif /* WINXP_APPS_BUILD */
 
@@ -230,11 +238,6 @@ typedef enum
 
     eHAL_STATUS_SET_CHAN_ALREADY_ON_REQUESTED_CHAN,
 
-#ifdef WLAN_FEATURE_VOWIFI_11R
-    eHAL_STATUS_FT_PREAUTH_KEY_SUCCESS,
-    eHAL_STATUS_FT_PREAUTH_KEY_FAILED,
-#endif
-
     // not a real status.  Just a way to mark the maximum in the enum.
     eHAL_STATUS_MAX
 
@@ -356,6 +359,7 @@ typedef enum
 #define offsetof(type, field) __offsetof(type, field)
 #endif
 
+#ifdef FEATURE_WLAN_INTEGRATED_SOC
 #define HAL_MAX_TXPOWER_INVALID       127
 
 #define MIN_STA_PWR_CAP_DBM         13
@@ -391,10 +395,10 @@ typedef enum
                         ((__x) < HAL_NUM_BSSID)
 
 #ifdef WLAN_SOFTAP_VSTA_FEATURE
-#define HAL_NUM_ASSOC_STA           32
-#define HAL_NUM_STA                 41
-#define HAL_NUM_HW_STA              16
-#define HAL_NUM_GPSTA               4
+#define HAL_NUM_ASSOC_STA           10
+#define HAL_NUM_STA                 14
+#define HAL_NUM_HW_STA              8
+#define HAL_NUM_GPSTA               2
 #define HAL_NUM_VSTA                (HAL_NUM_STA - HAL_NUM_HW_STA)
 
 #define QWLANFW_MAX_NUM_VSTA        HAL_NUM_VSTA
@@ -447,6 +451,7 @@ typedef enum
 
 #define STACFG_MAX_TC   8
 
+#endif
 
 #endif
 

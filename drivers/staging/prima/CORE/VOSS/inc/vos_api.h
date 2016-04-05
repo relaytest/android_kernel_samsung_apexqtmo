@@ -122,9 +122,11 @@ VOS_STATUS vos_preOpen ( v_CONTEXT_t *pVosContext );
 
 VOS_STATUS vos_preClose( v_CONTEXT_t *pVosContext );
 
+#ifdef FEATURE_WLAN_INTEGRATED_SOC
 
 VOS_STATUS vos_preStart( v_CONTEXT_t vosContext );
 
+#endif
 
 VOS_STATUS vos_open( v_CONTEXT_t *pVosContext, v_SIZE_t hddContextSize );
 
@@ -186,12 +188,8 @@ v_CONTEXT_t vos_get_global_context( VOS_MODULE_ID moduleId,
 
 v_U8_t vos_is_logp_in_progress(VOS_MODULE_ID moduleId, v_VOID_t *moduleContext);
 void vos_set_logp_in_progress(VOS_MODULE_ID moduleId, v_U8_t value);
-
 v_U8_t vos_is_load_unload_in_progress(VOS_MODULE_ID moduleId, v_VOID_t *moduleContext);
 void vos_set_load_unload_in_progress(VOS_MODULE_ID moduleId, v_U8_t value);
-
-v_U8_t vos_is_reinit_in_progress(VOS_MODULE_ID moduleId, v_VOID_t *moduleContext);
-void vos_set_reinit_in_progress(VOS_MODULE_ID moduleId, v_U8_t value);
 
 /**---------------------------------------------------------------------------
   
@@ -324,20 +322,4 @@ VOS_STATUS vos_wlanReInit(void);
 */
 VOS_STATUS vos_wlanRestart(void);
 
-/**
-  @brief vos_fwDumpReq()
-
-  This function is called to issue dump commands to Firmware
-
-  @param
-       cmd - Command No. to execute
-       arg1 - argument 1 to cmd
-       arg2 - argument 2 to cmd
-       arg3 - argument 3 to cmd
-       arg4 - argument 4 to cmd
-  @return
-       NONE
-*/
-v_VOID_t vos_fwDumpReq(tANI_U32 cmd, tANI_U32 arg1, tANI_U32 arg2,
-                        tANI_U32 arg3, tANI_U32 arg4);
 #endif // if !defined __VOS_NVITEM_H

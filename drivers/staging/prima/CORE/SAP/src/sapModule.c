@@ -90,6 +90,9 @@
 // SAP API header file
 
 #include "sapInternal.h"
+#if defined(FEATURE_WLAN_NON_INTEGRATED_SOC)
+#include "halInternal.h"
+#endif
 #include "smeInside.h"
 
 /*----------------------------------------------------------------------------
@@ -230,6 +233,7 @@ WLANSAP_Start
     v_PVOID_t  pvosGCtx
 )
 {
+#ifdef WLAN_SOFTAP_FEATURE
     ptSapContext  pSapCtx = NULL;
 
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
@@ -278,6 +282,7 @@ WLANSAP_Start
     }
 
 
+#endif
 
     return VOS_STATUS_SUCCESS;
 }/* WLANSAP_Start */
@@ -315,6 +320,7 @@ WLANSAP_Stop
 )
 {
 
+#ifdef WLAN_SOFTAP_FEATURE
     ptSapContext  pSapCtx = NULL;
 
     /*------------------------------------------------------------------------
@@ -343,6 +349,7 @@ WLANSAP_Stop
     /*------------------------------------------------------------------------
         Stop SAP (de-register RSN handler!?)
     ------------------------------------------------------------------------*/
+#endif
 
     return VOS_STATUS_SUCCESS;
 }/* WLANSAP_Stop */
@@ -377,6 +384,7 @@ WLANSAP_Close
     v_PVOID_t  pvosGCtx
 )
 {
+#ifdef WLAN_SOFTAP_FEATURE
     ptSapContext  pSapCtx = NULL;
     /*- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
@@ -406,6 +414,7 @@ WLANSAP_Close
     ------------------------------------------------------------------------*/
     vos_free_context(pvosGCtx, VOS_MODULE_ID_SAP, pSapCtx);
 
+#endif
     return VOS_STATUS_SUCCESS;
 }/* WLANSAP_Close */
 
@@ -444,6 +453,7 @@ WLANSAP_CleanCB
     v_U32_t freeFlag // 0 /*do not empty*/);
 )
 {
+#ifdef WLAN_SOFTAP_FEATURE
     /*------------------------------------------------------------------------
         Sanity check SAP control block
     ------------------------------------------------------------------------*/
@@ -466,11 +476,12 @@ WLANSAP_CleanCB
 
     pSapCtx->sapsMachine= eSAP_DISCONNECTED;
 
-    VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "%s: Initializing State: %d, sapContext value = %p",
+    VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH, "%s: Initializing State: %d, sapContext value = %x",
             __func__, pSapCtx->sapsMachine, pSapCtx);
     pSapCtx->sessionId = 0;
     pSapCtx->channel = 0;
 
+#endif
     return VOS_STATUS_SUCCESS;
 }// WLANSAP_CleanCB
 
@@ -673,82 +684,6 @@ WLANSAP_StartBss
 
     return vosStatus;
 }// WLANSAP_StartBss
-
-/*==========================================================================
-  FUNCTION    WLANSAP_SetMacACL
-
-  DESCRIPTION
-    This api function provides SAP to set mac list entry in accept list as well
-    as deny list
-
-  DEPENDENCIES
-
-  PARAMETERS
-
-    IN
-    pContext            : Pointer to Sap Context structure
-    pQctCommitConfig    : Pointer to configuration structure passed down from
-                          HDD(HostApd for Android)
-
-  RETURN VALUE
-    The result code associated with performing the operation
-
-    VOS_STATUS_E_FAULT: Pointer to SAP cb is NULL ; access would cause a page
-                         fault
-    VOS_STATUS_SUCCESS: Success
-
-  SIDE EFFECTS
-============================================================================*/
-VOS_STATUS
-WLANSAP_SetMacACL
-(
-    v_PVOID_t  pvosGCtx,   //pwextCtx
-    tsap_Config_t *pConfig
-)
-{
-    VOS_STATUS vosStatus = VOS_STATUS_SUCCESS;
-    ptSapContext  pSapCtx = NULL;
-
-    VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                 "WLANSAP_SetMacACL");
-
-    if (VOS_STA_SAP_MODE == vos_get_conparam ())
-    {
-        pSapCtx = VOS_GET_SAP_CB(pvosGCtx);
-        if ( NULL == pSapCtx )
-        {
-            VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_INFO_HIGH,
-                       "%s: Invalid SAP pointer from pvosGCtx", __func__);
-            return VOS_STATUS_E_FAULT;
-        }
-
-        // Copy MAC filtering settings to sap context
-        pSapCtx->eSapMacAddrAclMode = pConfig->SapMacaddr_acl;
-
-        if (eSAP_DENY_UNLESS_ACCEPTED == pSapCtx->eSapMacAddrAclMode)
-        {
-            vos_mem_copy(pSapCtx->acceptMacList, pConfig->accept_mac,
-                                                 sizeof(pConfig->accept_mac));
-            pSapCtx->nAcceptMac = pConfig->num_accept_mac;
-            sapSortMacList(pSapCtx->acceptMacList, pSapCtx->nAcceptMac);
-        }
-        else if (eSAP_ACCEPT_UNLESS_DENIED == pSapCtx->eSapMacAddrAclMode)
-        {
-            vos_mem_copy(pSapCtx->denyMacList, pConfig->deny_mac,
-                                               sizeof(pConfig->deny_mac));
-            pSapCtx->nDenyMac = pConfig->num_deny_mac;
-            sapSortMacList(pSapCtx->denyMacList, pSapCtx->nDenyMac);
-        }
-    }
-    else
-    {
-        VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
-                       "%s : SoftAp role has not been enabled", __func__);
-        return VOS_STATUS_E_FAULT;
-    }
-
-    return vosStatus;
-}//WLANSAP_SetMacACL
 
 /*==========================================================================
   FUNCTION    WLANSAP_StopBss
@@ -1087,7 +1022,7 @@ WLANSAP_ModifyACL
             {
                 //error check
                 // if list is already at max, return failure
-                if (pSapCtx->nAcceptMac == MAX_ACL_MAC_ADDRESS)
+                if (pSapCtx->nAcceptMac == MAX_MAC_ADDRESS_ACCEPTED)
                 {
                     VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                             "White list is already maxed out. Cannot accept %02x:%02x:%02x:%02x:%02x:%02x",
@@ -1150,7 +1085,7 @@ WLANSAP_ModifyACL
             {
                 //error check
                 // if list is already at max, return failure
-                if (pSapCtx->nDenyMac == MAX_ACL_MAC_ADDRESS)
+                if (pSapCtx->nDenyMac == MAX_MAC_ADDRESS_ACCEPTED)
                 {
                     VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                             "Black list is already maxed out. Cannot accept %02x:%02x:%02x:%02x:%02x:%02x",
@@ -1269,6 +1204,7 @@ WLANSAP_DisassocSta
     return VOS_STATUS_SUCCESS;
 }
 
+#ifdef WLAN_SOFTAP_FEATURE
 /*==========================================================================
   FUNCTION    WLANSAP_DeauthSta
 
@@ -1298,8 +1234,6 @@ WLANSAP_DeauthSta
     v_U8_t *pPeerStaMac
 )
 {
-    eHalStatus halStatus = eHAL_STATUS_FAILURE;
-    VOS_STATUS vosStatus = VOS_STATUS_E_FAULT;
     ptSapContext  pSapCtx = VOS_GET_SAP_CB(pvosGCtx);
 
     /*------------------------------------------------------------------------
@@ -1310,17 +1244,13 @@ WLANSAP_DeauthSta
     {
         VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                    "%s: Invalid SAP pointer from pvosGCtx", __func__);
-        return vosStatus;
+        return VOS_STATUS_E_FAULT;
     }
 
-    halStatus = sme_RoamDeauthSta(VOS_GET_HAL_CB(pSapCtx->pvosGCtx), pSapCtx->sessionId,
+    sme_RoamDeauthSta(VOS_GET_HAL_CB(pSapCtx->pvosGCtx), pSapCtx->sessionId,
                             pPeerStaMac);
 
-    if (halStatus == eHAL_STATUS_SUCCESS)
-    {
-        vosStatus = VOS_STATUS_SUCCESS;
-    }
-    return vosStatus;
+    return VOS_STATUS_SUCCESS;
 }
 /*==========================================================================
   FUNCTION    WLANSAP_SetChannelRange
@@ -1363,22 +1293,22 @@ WLANSAP_SetChannelRange(tHalHandle hHal,v_U8_t startChannel, v_U8_t endChannel,
     /*------------------------------------------------------------------------
       Sanity check
       ------------------------------------------------------------------------*/
-    if (( WNI_CFG_SAP_CHANNEL_SELECT_OPERATING_BAND_STAMIN > operatingBand) ||
-          (WNI_CFG_SAP_CHANNEL_SELECT_OPERATING_BAND_STAMAX < operatingBand))
+    if (( WNI_CFG_SAP_CHANNEL_SELECT_OPERATING_BAND_APMIN > operatingBand)||
+          (WNI_CFG_SAP_CHANNEL_SELECT_OPERATING_BAND_APMAX < operatingBand))
     {
          VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                      "Invalid operatingBand on WLANSAP_SetChannelRange");
         return VOS_STATUS_E_FAULT;
     }
-    if (( WNI_CFG_SAP_CHANNEL_SELECT_START_CHANNEL_STAMIN > startChannel) ||
-         (WNI_CFG_SAP_CHANNEL_SELECT_START_CHANNEL_STAMAX < startChannel))
+    if (( WNI_CFG_SAP_CHANNEL_SELECT_START_CHANNEL_APMIN > startChannel)||
+         (WNI_CFG_SAP_CHANNEL_SELECT_START_CHANNEL_APMAX < startChannel))
     {
         VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                     "Invalid startChannel value on WLANSAP_SetChannelRange");
         return VOS_STATUS_E_FAULT;
     }
-    if (( WNI_CFG_SAP_CHANNEL_SELECT_END_CHANNEL_STAMIN > endChannel) ||
-         (WNI_CFG_SAP_CHANNEL_SELECT_END_CHANNEL_STAMAX < endChannel))
+    if (( WNI_CFG_SAP_CHANNEL_SELECT_END_CHANNEL_APMIN > endChannel)||
+         (WNI_CFG_SAP_CHANNEL_SELECT_END_CHANNEL_APMAX < endChannel))
     {
         VOS_TRACE( VOS_MODULE_ID_SAP, VOS_TRACE_LEVEL_ERROR,
                       "Invalid endChannel value on WLANSAP_SetChannelRange");
@@ -1493,6 +1423,7 @@ WLANSAP_SetChannelRange(tHalHandle hHal,v_U8_t startChannel, v_U8_t endChannel,
     }
     return VOS_STATUS_SUCCESS;
 }
+#endif
 
 /*==========================================================================
   FUNCTION    WLANSAP_SetCounterMeasure
@@ -2058,6 +1989,7 @@ VOS_STATUS WLANSAP_GetStatistics(v_PVOID_t pvosGCtx, tSap_SoftapStats *statBuf, 
     return (WLANTL_GetSoftAPStatistics(pvosGCtx, statBuf, bReset));
 }
 
+#ifdef WLAN_FEATURE_P2P
 /*==========================================================================
 
   FUNCTION    WLANSAP_SendAction
@@ -2380,3 +2312,4 @@ VOS_STATUS WLANSAP_DeRegisterMgmtFrame( v_PVOID_t pvosGCtx, tANI_U16 frameType,
 
     return VOS_STATUS_E_FAULT;
 }
+#endif // WLAN_FEATURE_P2P

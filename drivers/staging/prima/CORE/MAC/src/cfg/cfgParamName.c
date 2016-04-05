@@ -44,7 +44,7 @@
  */
 
 /*
- * DO NOT EDIT - This file is generated automatically
+ * DO NOT EDIT - This file is generated automaticlly
  */
 
 /*
@@ -347,14 +347,6 @@ unsigned char *gCfgParamName[] = {
     (unsigned char *)"ENABLE_MC_ADDR_LIST",
     (unsigned char *)"ENABLE_UC_FILTER",
     (unsigned char *)"ENABLE_LPWR_IMG_TRANSITION",
-    (unsigned char *)"ENABLE_MCC_ADAPTIVE_SCHED",
-    (unsigned char *)"DISABLE_LDPC_WITH_TXBF_AP",
-    (unsigned char *)"AP_LINK_MONITOR_TIMEOUT",
-    (unsigned char *)"BTC_ACTIVE_WLAN_LEN",
-    (unsigned char *)"BTC_ACTIVE_BT_LEN",
-    (unsigned char *)"BTC_SAP_ACTIVE_WLAN_LEN",
-    (unsigned char *)"BTC_SAP_ACTIVE_BT_LEN",
-    (unsigned char *)"DEBUG_P2P_REMAIN_ON_CHANNEL",
 };
 
 

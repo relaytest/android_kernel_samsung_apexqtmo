@@ -65,7 +65,11 @@
 #include <cfgApi.h>
 #include "cfgDef.h"
 
+#if (WNI_POLARIS_FW_PRODUCT == AP)
+    #include <wniCfgAp.h>
+#else
     #include <wniCfgSta.h>
+#endif
 
 /*--------------------------------------------------------------------*/
 /* CFG miscellaneous definition                                       */

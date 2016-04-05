@@ -83,7 +83,6 @@ typedef struct
    wpt_uint8 fProtectedFrame;
    wpt_uint16 fPktlen;
    wpt_status txCompleteStatus;
-   wpt_uint8  staIdx;
 } WDI_DS_TxMetaInfoType;
 
 
@@ -162,14 +161,6 @@ typedef struct
 
    wpt_uint32 rssi0;
    wpt_uint32 rssi1;
-
-#ifdef WLAN_FEATURE_11W
-   wpt_uint32 rmf:1;
-#endif
-#ifdef WLAN_FEATURE_ROAM_SCAN_OFFLOAD
-   wpt_uint32 offloadScanLearn;
-   wpt_uint32 roamCandidateInd;
-#endif
 } WDI_DS_RxMetaInfoType;
 
 typedef struct sPktMetaInfo
@@ -336,35 +327,5 @@ WDI_Status WDI_DS_GetStaIdxFromBssIdx(void *pContext, wpt_uint8 bssIdx, wpt_uint
  *
  */
 WDI_Status WDI_DS_ClearStaIdxPerBssIdx(void *pContext, wpt_uint8 bssIdx, wpt_uint8 staIdx);
-
-/* @brief: WDI_DS_GetTrafficStats
- * This function should be invoked to fetch the current stats
-  * Parameters:
- *  pStats:Pointer to the collected stats
- *  len: length of buffer pointed to by pStats
- *  Return Status: None
- */
-void WDI_DS_GetTrafficStats(WDI_TrafficStatsType** pStats, wpt_uint32 *len);
-
-/* @brief: WDI_DS_DeactivateTrafficStats
- * This function should be invoked to deactivate traffic stats collection
-  * Parameters: None
- *  Return Status: None
- */
-void WDI_DS_DeactivateTrafficStats(void);
-
-/* @brief: WDI_DS_ActivateTrafficStats
- * This function should be invoked to activate traffic stats collection
-  * Parameters: None
- *  Return Status: None
- */
-void WDI_DS_ActivateTrafficStats(void);
-
-/* @brief: WDI_DS_ClearTrafficStats
- * This function should be invoked to clear all past stats
-  * Parameters: None
- *  Return Status: None
- */
-void WDI_DS_ClearTrafficStats(void);
 
 #endif

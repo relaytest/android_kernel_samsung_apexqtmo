@@ -208,7 +208,7 @@ bapSetKey( v_PVOID_t pvosGCtx, tCsrRoamSetKey *pSetKeyInfo )
         return VOS_STATUS_E_FAULT;
     }
 
-    VOS_TRACE( VOS_MODULE_ID_BAP, VOS_TRACE_LEVEL_INFO_HIGH, "%s: btampContext value: %p", __func__,  btampContext);
+    VOS_TRACE( VOS_MODULE_ID_BAP, VOS_TRACE_LEVEL_INFO_HIGH, "%s: btampContext value: %x", __func__,  btampContext); 
 
     /* Fill in the event structure */ 
     bapEvent.event = eWLAN_BAP_RSN_SUCCESS;
@@ -1152,7 +1152,18 @@ regStaWithTl
     // translation for WinMob 6.1
     //*** Not to enabled UMA.
     /* Enable UMA for TX translation only when there is no concurrent session active */
+#if defined (FEATURE_WLAN_INTEGRATED_SOC)
     staDesc.ucSwFrameTXXlation = 1;
+#else
+    if (vos_concurrent_sessions_running())
+    {
+       staDesc.ucSwFrameTXXlation = 1;
+    }
+    else
+    {
+       staDesc.ucSwFrameTXXlation = 0;
+    }
+#endif
     staDesc.ucSwFrameRXXlation = 1; 
     staDesc.ucAddRmvLLC = 0;
 
@@ -1415,7 +1426,7 @@ signalHCIPhysLinkDiscEvent
 #ifdef BAP_DEBUG
   /* Trace the tBtampCtx being passed in. */
   VOS_TRACE( VOS_MODULE_ID_BAP, VOS_TRACE_LEVEL_INFO_HIGH,
-            "WLAN BAP Context Monitor: btampContext value = %p in %s:%d", btampContext, __func__, __LINE__ );
+            "WLAN BAP Context Monitor: btampContext value = %x in %s:%d", btampContext, __func__, __LINE__ );
 #endif //BAP_DEBUG
 
     /* Loop disconnecting all Logical Links on this Physical Link */

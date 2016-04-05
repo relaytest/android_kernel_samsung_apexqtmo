@@ -41,9 +41,6 @@
 
 #ifndef __WLAN_QCT_DTS_H
 #define __WLAN_QCT_DTS_H
-
-#include "wlan_qct_wdi.h"
-
 /**=========================================================================
  *     
  *       \file  wlan_qct_wdi_dts.h
@@ -128,7 +125,7 @@ typedef struct {
   wpt_status (*setPowerState) (void *pContext, WDTS_PowerStateType   powerState, 
                                WDTS_SetPSCbType cBack);
   void (*channelDebug)(wpt_boolean displaySnapshot,
-                       wpt_uint8   debugFlags);
+                       wpt_boolean enableStallDetect);
   wpt_status (*stop) (void *pContext);
   wpt_status (*close) (void *pContext);
   wpt_uint32 (*getFreeTxDataResNumber) (void *pContext);
@@ -138,36 +135,6 @@ typedef struct {
    WDTS_SetPowerStateCbType cback;
    void*        pUserData;
 } WDTS_SetPowerStateCbInfoType;
-
-/* Tx/Rx stats function
- * This function should be invoked to fetch the current stats
-  * Parameters:
- *  pStats:Pointer to the collected stats
- *  len: length of buffer pointed to by pStats
- *  Return Status: None
- */
-void WDTS_GetTrafficStats(WDI_TrafficStatsType** pStats, wpt_uint32 *len);
-
-/* WDTS_DeactivateTrafficStats
- * This function should be invoked to suspend traffic stats collection
-  * Parameters: None
- *  Return Status: None
- */
-void WDTS_DeactivateTrafficStats(void);
-
-/* WDTS_ActivateTrafficStats
- * This function should be invoked to activate traffic stats collection
-  * Parameters: None
- *  Return Status: None
- */
-void WDTS_ActivateTrafficStats(void);
-
-/* WDTS_ClearTrafficStats
- * This function should be invoked to clear all past stats
-  * Parameters: None
- *  Return Status: None
- */
-void WDTS_ClearTrafficStats(void);
 
 /* DTS open  function. 
  * On open the transport device should initialize itself.
@@ -239,16 +206,13 @@ wpt_status WDTS_SetPowerState(void *pContext, WDTS_PowerStateType powerState,
  * Or if host driver detects any abnormal stcuk may display
  * Parameters:
  *  displaySnapshot : Display DXE snapshot option
- *  debugFlags      : Enable stall detect features
- *                    defined by WPAL_DeviceDebugFlags
- *                    These features may effect
- *                    data performance.
- *
- *                    Not integrate till fully verification
+ *  enableStallDetect : Enable stall detect feature
+                        This feature will take effect to data performance
+                        Not integrate till fully verification
  * Return Value: NONE
  *
  */
-void WDTS_ChannelDebug(wpt_boolean displaySnapshot, wpt_uint8 debugFlags);
+void WDTS_ChannelDebug(wpt_boolean displaySnapshot, wpt_boolean toggleStallDetect);
 
 /* DTS Stop function. 
  * Stop Transport driver, ie DXE, SDIO

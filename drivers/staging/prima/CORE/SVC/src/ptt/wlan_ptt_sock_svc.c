@@ -53,7 +53,9 @@
 #include <wlan_ptt_sock_svc.h>
 #include <vos_types.h>
 #include <vos_trace.h>
+#ifdef ANI_MANF_DIAG
 #include <wlan_hdd_ftm.h>
+#endif
 
 #define PTT_SOCK_DEBUG
 #ifdef PTT_SOCK_DEBUG
@@ -117,13 +119,8 @@ int ptt_sock_send_msg_to_app(tAniHdr *wmsg, int radio, int src_mod, int pid)
          __func__, tot_msg_len);
       return -ENOMEM;
    }
-   nlh = nlmsg_put(skb, pid, nlmsg_seq++, src_mod, payload_len, NLM_F_REQUEST);
-   if (NULL == nlh) {
-      PTT_TRACE(VOS_TRACE_LEVEL_ERROR, "%s: nlmsg_put() failed for msg size[%d]\n",
-         __func__, tot_msg_len);
-      kfree_skb(skb);
-      return -ENOMEM;
-   }
+   nlh = NLMSG_PUT(skb, pid, nlmsg_seq++, src_mod, payload_len);
+   nlh->nlmsg_flags = NLM_F_REQUEST;
    wnl = (tAniNlHdr *) nlh;
    wnl->radio = radio;
    memcpy(&wnl->wmsg, wmsg, wmsg_length);
@@ -133,6 +130,7 @@ int ptt_sock_send_msg_to_app(tAniHdr *wmsg, int radio, int src_mod, int pid)
    ptt_sock_dump_buf((const unsigned char *)skb->data, skb->len);
 #endif
    err = nl_srv_ucast(skb, pid);
+nlmsg_failure:
    return err;
 }
 /*
@@ -268,12 +266,18 @@ static void ptt_proc_quarky_msg(tAniNlHdr *wnl, tAniHdr *wmsg, int radio)
             arg4 = *(unsigned int *) ((char *)wmsg + 24);
             PTT_TRACE(VOS_TRACE_LEVEL_INFO, "%s: PTT_MSG_LOG_DUMP_DBG %d arg1 %d arg2 %d arg3 %d arg4 %d\n",
                __func__, cmd, arg1, arg2, arg3, arg4);
+#ifdef FEATURE_WLAN_NON_INTEGRATED_SOC
+            // FIXME_PRIMA -- need logDump() replacement
+            logPrintf(pAdapterHandle->hHal, cmd, arg1, arg2, arg3, arg4);
+#endif //FEATURE_WLAN_NON_INTEGRATED_SOC
             //send message to the app
             ptt_sock_send_msg_to_app(wmsg, 0, ANI_NL_MSG_PUMAC, wnl->nlh.nlmsg_pid);
             break;
+#ifdef ANI_MANF_DIAG
          case PTT_MSG_FTM_CMDS_TYPE:
             wlan_hdd_process_ftm_cmd(pAdapterHandle,wnl);
             break;
+#endif
          default:
             PTT_TRACE(VOS_TRACE_LEVEL_ERROR, "%s: Unknown ANI Msg [0x%X], length [0x%X]\n",
                __func__, ani_msg_type, be16_to_cpu(wmsg->length ));
@@ -295,12 +299,12 @@ static int ptt_sock_rx_nlink_msg (struct sk_buff * skb)
    switch (type) {
       case ANI_NL_MSG_PUMAC:  //Message from the PTT socket APP
          PTT_TRACE(VOS_TRACE_LEVEL_INFO, "%s: Received ANI_NL_MSG_PUMAC Msg [0x%X]\n",
-            __func__, type);
+            __func__, type, radio);
          ptt_proc_pumac_msg(skb, &wnl->wmsg, radio);
          break;
       case ANI_NL_MSG_PTT: //Message from Quarky GUI
          PTT_TRACE(VOS_TRACE_LEVEL_INFO, "%s: Received ANI_NL_MSG_PTT Msg [0x%X]\n",
-            __func__, type);
+            __func__, type, radio);
          ptt_proc_quarky_msg(wnl, &wnl->wmsg, radio);
          break;
       default:

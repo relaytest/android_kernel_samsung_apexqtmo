@@ -60,7 +60,9 @@ tSirRetStatus macStop(tHalHandle hHal, tHalStopType stopType);
 tSirRetStatus macOpen(tHalHandle * pHalHandle, tHddHandle hHdd, tMacOpenParameters * pMacOpenParms);
 tSirRetStatus macClose(tHalHandle hHal);
 
+#ifdef FEATURE_WLAN_INTEGRATED_SOC 
 tSirRetStatus macPreStart(tHalHandle hHal);
+#endif
 
 #endif //__MAC_INIT_API_H
 

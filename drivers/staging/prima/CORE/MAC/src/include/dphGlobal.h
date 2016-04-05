@@ -262,6 +262,7 @@ typedef struct sDphQueueAttr
 } tDphQueueAttr, *tpDphQueueAttr;
 
 
+#if defined( FEATURE_WLAN_INTEGRATED_SOC )
 
 typedef struct sCfgTrafficClass {
 
@@ -324,6 +325,7 @@ typedef struct sCfgTrafficClass {
 
 } tCfgTrafficClass;
 
+#endif /* EATURE_WLAN_INTEGRATED_SOC */
 
 
 /// STA state node
@@ -387,9 +389,15 @@ typedef struct sDphHashNode
 
     tANI_U8  fAniCount:1;
 
+#if (WNI_POLARIS_FW_PRODUCT == AP)
+
+    tANI_U8   hcfEnabled : 1;
+
+#else
 
     tANI_U8   rsvd:1;
 
+#endif
 
 
     /// Fragmentation size
@@ -617,11 +625,7 @@ typedef struct sDphHashNode
 
 #ifdef WLAN_FEATURE_11AC
     tANI_U8  vhtSupportedChannelWidthSet;
-    tANI_U8  vhtBeamFormerCapable;
 #endif
-
-    tANI_U8 htLdpcCapable;
-    tANI_U8 vhtLdpcCapable;
 
     /* When a station with already an existing dph entry tries to 
 
