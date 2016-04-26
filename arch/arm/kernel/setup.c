@@ -367,6 +367,23 @@ void __init early_print(const char *str, ...)
 	printk("%s", buf);
 }
 
+static void __init cpuid_init_hwcaps(void)
+{
+	unsigned int divide_instrs;
+
+	if (cpu_architecture() < CPU_ARCH_ARMv7)
+		return;
+
+	divide_instrs = (read_cpuid_ext(CPUID_EXT_ISAR0) & 0x0f000000) >> 24;
+
+	switch (divide_instrs) {
+	case 2:
+		elf_hwcap |= HWCAP_IDIVA;
+	case 1:
+		elf_hwcap |= HWCAP_IDIVT;
+	}
+}
+
 static void __init feat_v6_fixup(void)
 {
 	int id = read_cpuid_id();
@@ -490,6 +507,9 @@ static void __init setup_processor(void)
 	snprintf(elf_platform, ELF_PLATFORM_SIZE, "%s%c",
 		 list->elf_name, ENDIANNESS);
 	elf_hwcap = list->elf_hwcap;
+
+	cpuid_init_hwcaps();
+
 #ifndef CONFIG_ARM_THUMB
 	elf_hwcap &= ~HWCAP_THUMB;
 #endif
@@ -514,7 +534,7 @@ void __init dump_machine_table(void)
 		/* can't use cpu_relax() here as it may require MMU setup */;
 }
 
-int __init arm_add_memory(phys_addr_t start, unsigned long size)
+int __init arm_add_memory(phys_addr_t start, phys_addr_t size)
 {
 	struct membank *bank = &meminfo.bank[meminfo.nr_banks];
 
@@ -544,7 +564,7 @@ int __init arm_add_memory(phys_addr_t start, unsigned long size)
 	}
 #endif
 
-	bank->size = size & PAGE_MASK;
+	bank->size = size & ~(phys_addr_t)(PAGE_SIZE - 1);
 
 	/*
 	 * Check whether this memory region has non-zero size or
@@ -564,7 +584,7 @@ int __init arm_add_memory(phys_addr_t start, unsigned long size)
 static int __init early_mem(char *p)
 {
 	static int usermem __initdata = 0;
-	unsigned long size;
+	phys_addr_t size;
 	phys_addr_t start;
 	char *endp;
 
@@ -1053,6 +1073,9 @@ static const char *hwcap_str[] = {
 	"vfpv4",
 	"idiva",
 	"idivt",
+	"vfpd32",
+	"lpae",
+	"evtstrm",
 	NULL
 };
 

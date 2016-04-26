@@ -761,7 +761,9 @@ static const u32 __wl_cipher_suites[] = {
 	WLAN_CIPHER_SUITE_WEP104,
 	WLAN_CIPHER_SUITE_TKIP,
 	WLAN_CIPHER_SUITE_CCMP,
+#ifdef MFP
 	WLAN_CIPHER_SUITE_AES_CMAC,
+#endif
 #ifdef BCMWAPI_WPI
 	WLAN_CIPHER_SUITE_SMS4,
 #endif
@@ -1130,8 +1132,9 @@ wl_validate_wps_ie(char *wps_ie, s32 wps_ie_len, bool *pbc)
 			WL_DBG(("  attr WPS_ID_CONFIG_METHODS: %x\n", HTON16(val)));
 		} else if (subelt_id == WPS_ID_DEVICE_NAME) {
 			char devname[100];
-			memcpy(devname, subel, subelt_len);
-			devname[subelt_len] = '\0';
+			size_t namelen = MIN(subelt_len, sizeof(devname));
+			memcpy(devname, subel, namelen);
+			devname[namelen-1] = '\0';
 			WL_DBG(("  attr WPS_ID_DEVICE_NAME: %s (len %u)\n",
 				devname, subelt_len));
 		} else if (subelt_id == WPS_ID_DEVICE_PWD_ID) {
@@ -9104,9 +9107,9 @@ wl_notify_sched_scan_results(struct bcm_cfg80211 *cfg, struct net_device *ndev,
 			 * scan request in the form of cfg80211_scan_request. For timebeing, create
 			 * cfg80211_scan_request one out of the received PNO event.
 			 */
+			ssid[i].ssid_len = MIN(DOT11_MAX_SSID_LEN, netinfo->pfnsubnet.SSID_len);
 			memcpy(ssid[i].ssid, netinfo->pfnsubnet.SSID,
-				netinfo->pfnsubnet.SSID_len);
-			ssid[i].ssid_len = netinfo->pfnsubnet.SSID_len;
+			       ssid[i].ssid_len);
 			request->n_ssids++;
 
 			channel_req = netinfo->pfnsubnet.channel;
@@ -9414,14 +9417,21 @@ wl_cfg80211_netdev_notifier_call(struct notifier_block * nb,
 	unsigned long state,
 	void *ndev)
 {
+	struct bcm_cfg80211 *cfg =
+		container_of(nb, struct bcm_cfg80211, netdev_notifier);
 	struct net_device *dev = ndev;
 	struct wireless_dev *wdev = dev->ieee80211_ptr;
-	struct bcm_cfg80211 *cfg = g_bcm_cfg;
 	int refcnt = 0;
 
-	WL_DBG(("Enter \n"));
+	/* We need to be careful when using passed in net_device since
+	 * we can not assume that it belongs to bcmdhd driver. We will
+	 * also encounter all other devices in the system, for example
+	 * loopback.
+	 */
 
-	if (!wdev || !cfg || dev == bcmcfg_to_prmry_ndev(cfg))
+	WL_DBG(("Enter\n"));
+
+	if (!wdev || dev == bcmcfg_to_prmry_ndev(cfg))
 		return NOTIFY_DONE;
 
 	switch (state) {
@@ -9475,13 +9485,6 @@ wl_cfg80211_netdev_notifier_call(struct notifier_block * nb,
 	}
 	return NOTIFY_DONE;
 }
-static struct notifier_block wl_cfg80211_netdev_notifier = {
-	.notifier_call = wl_cfg80211_netdev_notifier_call,
-};
-/* to make sure we won't register the same notifier twice, otherwise a loop is likely to be
- * created in kernel notifier link list (with 'next' pointing to itself)
- */
-static bool wl_cfg80211_netdev_notifier_registered = FALSE;
 
 static void wl_cfg80211_scan_abort(struct bcm_cfg80211 *cfg)
 {
@@ -10148,10 +10151,7 @@ static void wl_deinit_priv(struct bcm_cfg80211 *cfg)
 	wl_link_down(cfg);
 	del_timer_sync(&cfg->scan_timeout);
 	wl_deinit_priv_mem(cfg);
-	if (wl_cfg80211_netdev_notifier_registered) {
-		wl_cfg80211_netdev_notifier_registered = FALSE;
-		unregister_netdevice_notifier(&wl_cfg80211_netdev_notifier);
-	}
+	unregister_netdevice_notifier(&cfg->netdev_notifier);
 }
 
 #if defined(WL_ENABLE_P2P_IF) || defined(WL_NEWCFG_PRIVCMD_SUPPORT)
@@ -10315,15 +10315,14 @@ s32 wl_cfg80211_attach(struct net_device *ndev, void *context)
 		goto cfg80211_attach_out;
 	}
 #endif
-	if (!wl_cfg80211_netdev_notifier_registered) {
-		wl_cfg80211_netdev_notifier_registered = TRUE;
-		err = register_netdevice_notifier(&wl_cfg80211_netdev_notifier);
-		if (err) {
-			wl_cfg80211_netdev_notifier_registered = FALSE;
-			WL_ERR(("Failed to register notifierl %d\n", err));
-			goto cfg80211_attach_out;
-		}
+
+	cfg->netdev_notifier.notifier_call = wl_cfg80211_netdev_notifier_call;
+	err = register_netdevice_notifier(&cfg->netdev_notifier);
+	if (err) {
+		WL_ERR(("Failed to register notifierl %d\n", err));
+		goto cfg80211_attach_out;
 	}
+
 #if defined(COEX_DHCP)
 	cfg->btcoex_info = wl_cfg80211_btcoex_init(cfg->wdev->netdev);
 	if (!cfg->btcoex_info)

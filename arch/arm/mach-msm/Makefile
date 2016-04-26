@@ -134,7 +134,7 @@ obj-$(CONFIG_MSM_ONCRPCROUTER) += smd_rpcrouter_device.o
 obj-$(CONFIG_MSM_IPC_ROUTER) += ipc_router.o
 obj-$(CONFIG_MSM_IPC_ROUTER)+= ipc_socket.o
 obj-$(CONFIG_MSM_IPC_ROUTER_SECURITY)+= msm_ipc_router_security.o
-obj-$(CONFIG_DEBUG_FS) += smd_rpc_sym.o
+obj-$(CONFIG_DEBUG_FS) += ./smd_rpc_sym.o
 obj-$(CONFIG_MSM_ONCRPCROUTER) += smd_rpcrouter_servers.o
 obj-$(CONFIG_MSM_ONCRPCROUTER) += smd_rpcrouter_clients.o
 obj-$(CONFIG_MSM_ONCRPCROUTER) += smd_rpcrouter_xdr.o
@@ -303,12 +303,19 @@ obj-$(CONFIG_MACH_M2_DCM)       += board-m2-camera.o board-m2-display.o board-m2
 obj-$(CONFIG_MACH_M2_DCM)       += board-m2_dcm.o board-m2_dcm-gpiomux.o
 obj-$(CONFIG_MACH_APEXQ)    += board-mms-tsp.o board-apexq.o board-apexq-gpiomux.o board-apexq-battery.o board-8960-regulator.o board-8960-storage.o
 obj-$(CONFIG_MACH_APEXQ)    += board-apexq-camera.o board-m2-display.o board-m2-pmic.o
+obj-$(CONFIG_MACH_COMANCHE)    += board-mms-tsp.o board-comanche.o board-comanche-gpiomux.o board-comanche-battery.o board-8960-regulator.o board-8960-storage.o
+obj-$(CONFIG_MACH_COMANCHE)    += board-comanche-camera.o board-m2-display.o board-m2-pmic.o
 
 obj-$(CONFIG_MACH_EXPRESS) += board-8960-regulator.o board-8960-storage.o
 obj-$(CONFIG_MACH_EXPRESS) += board-apexq-battery.o board-apexq-camera.o
 obj-$(CONFIG_MACH_EXPRESS) += board-express.o board-express-gpiomux.o
 obj-$(CONFIG_MACH_EXPRESS) += board-m2-display.o board-m2-pmic.o
 
+obj-$(CONFIG_MACH_ESPRESSO_VZW) += board-espresso_vzw.o board-espresso_vzw-gpiomux.o
+obj-$(CONFIG_MACH_ESPRESSO_VZW) += board-8960-regulator.o board-8960-storage.o
+obj-$(CONFIG_MACH_ESPRESSO_VZW) += board-espresso-battery.o board-apexq-camera.o
+obj-$(CONFIG_MACH_ESPRESSO_VZW) += board-mms-tsp.o board-usb-switch.o
+obj-$(CONFIG_MACH_ESPRESSO_VZW) += board-m2-display.o board-m2-pmic.o
 obj-$(CONFIG_MACH_LGE) += lge/
 
 CFLAGS_msm_vibrator.o += -Idrivers/staging/android
@@ -401,4 +408,5 @@ obj-$(CONFIG_MSM_CPU_PWRCTL) +=  msm_cpu_pwrctl.o
 
 obj-$(CONFIG_SEC_DEBUG) += sec_debug.o sec_getlog.o sec_gaf.o
 
+obj-$(CONFIG_HAS_MACH_MEMUTILS) += memutils/
 obj-$(CONFIG_ARCH_RANDOM) += early_random.o

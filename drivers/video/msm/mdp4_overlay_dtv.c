@@ -1,4 +1,4 @@
-/* Copyright (c) 2011-2013, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2011-2016, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -823,11 +823,13 @@ static void mdp4_overlay_dtv_alloc_pipe(struct msm_fb_data_type *mfd,
 			pipe->src_format = MDP_RGB_888;
 			break;
 		case 4:
-		default:
 			if (hdmi_prim_display)
 				pipe->src_format = MSMFB_DEFAULT_TYPE;
 			else
 				pipe->src_format = MDP_ARGB_8888;
+			break;
+		default:
+			pipe->src_format = mfd->fb_imgType;
 			break;
 		}
 	}
@@ -1115,7 +1117,7 @@ void mdp4_dtv_overlay(struct msm_fb_data_type *mfd)
 	struct mdp4_overlay_pipe *pipe;
 
 	mutex_lock(&mfd->dma->ov_mutex);
-	if (!mfd->panel_power_on) {
+	if (mdp_fb_is_power_off(mfd)) {
 		mutex_unlock(&mfd->dma->ov_mutex);
 		return;
 	}

@@ -41,6 +41,7 @@
 #include <linux/debug_locks.h>
 #include <linux/lockdep.h>
 #include <linux/idr.h>
+#include <linux/bug.h>
 
 #include "workqueue_sched.h"
 
@@ -1014,14 +1015,15 @@ static void __queue_work(unsigned int cpu, struct workqueue_struct *wq,
 			cpu = raw_smp_processor_id();
 
 		/*
-		 * It's multi cpu.  If @wq is non-reentrant and @work
-		 * was previously on a different cpu, it might still
-		 * be running there, in which case the work needs to
-		 * be queued on that cpu to guarantee non-reentrance.
+		 * It's multi cpu.  If @work was previously on a different
+		 * cpu, it might still be running there, in which case the
+		 * work needs to be queued on that cpu to guarantee
+		 * non-reentrancy.
 		 */
 		gcwq = get_gcwq(cpu);
-		if (wq->flags & WQ_NON_REENTRANT &&
-		    (last_gcwq = get_work_gcwq(work)) && last_gcwq != gcwq) {
+		last_gcwq = get_work_gcwq(work);
+
+		if (last_gcwq && last_gcwq != gcwq) {
 			struct worker *worker;
 
 			spin_lock_irqsave(&last_gcwq->lock, flags);
@@ -1917,6 +1919,7 @@ __acquires(&gcwq->lock)
 		       current->comm, preempt_count(), task_pid_nr(current),
 		       worker->current_func);
 		debug_show_held_locks(current);
+		BUG_ON(PANIC_CORRUPTION);
 		dump_stack();
 	}
 

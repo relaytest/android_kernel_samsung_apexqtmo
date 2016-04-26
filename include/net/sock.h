@@ -70,16 +70,16 @@
 struct cgroup;
 struct cgroup_subsys;
 #ifdef CONFIG_NET
-int mem_cgroup_sockets_init(struct cgroup *cgrp, struct cgroup_subsys *ss);
-void mem_cgroup_sockets_destroy(struct cgroup *cgrp);
+int mem_cgroup_sockets_init(struct mem_cgroup *memcg, struct cgroup_subsys *ss);
+void mem_cgroup_sockets_destroy(struct mem_cgroup *memcg);
 #else
 static inline
-int mem_cgroup_sockets_init(struct cgroup *cgrp, struct cgroup_subsys *ss)
+int mem_cgroup_sockets_init(struct mem_cgroup *memcg, struct cgroup_subsys *ss)
 {
 	return 0;
 }
 static inline
-void mem_cgroup_sockets_destroy(struct cgroup *cgrp)
+void mem_cgroup_sockets_destroy(struct mem_cgroup *memcg)
 {
 }
 #endif
@@ -328,6 +328,7 @@ struct sock {
 				sk_no_check  : 2,
 				sk_userlocks : 4,
 				sk_protocol  : 8,
+#define SK_PROTOCOL_MAX U8_MAX
 				sk_type      : 16;
 	kmemcheck_bitfield_end(flags);
 	int			sk_wmem_queued;
@@ -915,11 +916,12 @@ struct proto {
 	 * This function has to setup any files the protocol want to
 	 * appear in the kmem cgroup filesystem.
 	 */
-	int			(*init_cgroup)(struct cgroup *cgrp,
+	int			(*init_cgroup)(struct mem_cgroup *memcg,
 					       struct cgroup_subsys *ss);
-	void			(*destroy_cgroup)(struct cgroup *cgrp);
+	void			(*destroy_cgroup)(struct mem_cgroup *memcg);
 	struct cg_proto		*(*proto_cgroup)(struct mem_cgroup *memcg);
 #endif
+	int			(*diag_destroy)(struct sock *sk, int err);
 };
 
 struct cg_proto {

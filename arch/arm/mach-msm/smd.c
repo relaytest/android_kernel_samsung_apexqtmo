@@ -183,6 +183,17 @@ struct interrupt_stat interrupt_stats[NUM_SMD_SUBSYSTEMS];
 					  entry * SMSM_NUM_HOSTS + host)
 #define SMSM_INTR_MUX_ADDR(entry)        (smsm_info.intr_mux + entry)
 
+/**
+ * OVERFLOW_ADD_UNSIGNED() - check for unsigned overflow
+ *
+ * @type: type to check for overflow
+ * @a: left value to use
+ * @b: right value to use
+ * @returns: true if a + b will result in overflow; false otherwise
+ */
+#define OVERFLOW_ADD_UNSIGNED(type, a, b) \
+       (((type)~0 - (a)) < (b) ? true : false)
+
 /* Internal definitions which are not exported in some targets */
 enum {
 	SMSM_APPS_DEM_I = 3,
@@ -1075,12 +1086,18 @@ static unsigned ch_read_buffer(struct smd_channel *ch, void **ptr)
 {
 	unsigned head = ch->half_ch->get_head(ch->recv);
 	unsigned tail = ch->half_ch->get_tail(ch->recv);
-	*ptr = (void *) (ch->recv_data + tail);
+	unsigned fifo_size = ch->fifo_size;
 
+	BUG_ON(fifo_size >= SZ_1M);
+	BUG_ON(head >= fifo_size);
+	BUG_ON(tail >= fifo_size);
+	BUG_ON(OVERFLOW_ADD_UNSIGNED(uintptr_t, (uintptr_t)ch->recv_data,
+								tail));
+	*ptr = (void *) (ch->recv_data + tail);
 	if (tail <= head)
 		return head - tail;
 	else
-		return ch->fifo_size - tail;
+		return fifo_size - tail;
 }
 
 static int read_intr_blocked(struct smd_channel *ch)
@@ -1169,15 +1186,23 @@ static unsigned ch_write_buffer(struct smd_channel *ch, void **ptr)
 {
 	unsigned head = ch->half_ch->get_head(ch->send);
 	unsigned tail = ch->half_ch->get_tail(ch->send);
+	unsigned fifo_size = ch->fifo_size;
+
+	BUG_ON(fifo_size >= SZ_1M);
+	BUG_ON(head >= fifo_size);
+	BUG_ON(tail >= fifo_size);
+	BUG_ON(OVERFLOW_ADD_UNSIGNED(uintptr_t, (uintptr_t)ch->send_data,
+								head));
+
 	*ptr = (void *) (ch->send_data + head);
 
 	if (head < tail) {
 		return tail - head - 1;
 	} else {
 		if (tail == 0)
-			return ch->fifo_size - head - 1;
+			return fifo_size - head - 1;
 		else
-			return ch->fifo_size - head;
+			return fifo_size - head;
 	}
 }
 
@@ -2080,6 +2105,29 @@ int smd_write_end(smd_channel_t *ch)
 	return 0;
 }
 EXPORT_SYMBOL(smd_write_end);
+
+int smd_write_segment_avail(smd_channel_t *ch)
+{
+	int n;
+
+	if (!ch) {
+		pr_err("%s: Invalid channel specified\n", __func__);
+		return -ENODEV;
+	}
+	if (!ch->is_pkt_ch) {
+		pr_err("%s: non-packet channel specified\n", __func__);
+		return -ENODEV;
+	}
+
+	n = smd_stream_write_avail(ch);
+
+	/* pkt hdr already written, no need to reserve space for it */
+	if (ch->pending_pkt_sz)
+		return n;
+
+	return n > SMD_HEADER_SIZE ? n - SMD_HEADER_SIZE : 0;
+}
+EXPORT_SYMBOL(smd_write_segment_avail);
 
 int smd_read(smd_channel_t *ch, void *data, int len)
 {

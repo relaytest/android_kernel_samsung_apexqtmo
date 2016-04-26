@@ -50,6 +50,8 @@ static int mipi_dsi_off(struct platform_device *pdev);
 static int mipi_dsi_on(struct platform_device *pdev);
 static int mipi_dsi_fps_level_change(struct platform_device *pdev,
 					u32 fps_level);
+static int mipi_dsi_low_power_config(struct platform_device *pdev,
+					int enable);
 
 static struct platform_device *pdev_list[MSM_FB_MAX_DEV_LIST];
 static int pdev_list_cnt;
@@ -74,6 +76,17 @@ static int mipi_dsi_fps_level_change(struct platform_device *pdev,
 	mipi_dsi_wait4video_done();
 	mipi_dsi_configure_fb_divider(fps_level);
 	return 0;
+}
+
+static int mipi_dsi_low_power_config(struct platform_device *pdev,
+					int enable)
+{
+	int ret = 0;
+
+	if (mipi_dsi_pdata && mipi_dsi_pdata->panel_lp_en)
+		ret = mipi_dsi_pdata->panel_lp_en(enable);
+
+	return ret;
 }
 
 static int mipi_dsi_off(struct platform_device *pdev)
@@ -135,7 +148,10 @@ static int mipi_dsi_off(struct platform_device *pdev)
 	mipi_dsi_unprepare_ahb_clocks();
 	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_power_save)
 		mipi_dsi_pdata->dsi_power_save(0);
-
+#if defined(CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11)
+	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_client_power_save)
+		mipi_dsi_pdata->dsi_client_power_save(0);
+#endif /* CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11 */
 	if (mdp_rev >= MDP_REV_41)
 		mutex_unlock(&mfd->dma->ov_mutex);
 	else
@@ -179,6 +195,13 @@ static int mipi_dsi_on(struct platform_device *pdev)
 
 	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_power_save)
 		mipi_dsi_pdata->dsi_power_save(1);
+#if defined(CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11)
+	/*
+	 * Fix for floating state of VDD line in toshiba chip
+	 * */
+	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_client_power_save)
+		mipi_dsi_pdata->dsi_client_power_save(1);
+#endif /* CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11 */
 
 	cont_splash_clk_ctrl(0);
 	mipi_dsi_prepare_ahb_clocks();
@@ -266,6 +289,31 @@ static int mipi_dsi_on(struct platform_device *pdev)
 	}
 
 	mipi_dsi_host_init(mipi);
+#if defined(CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11)
+	/*
+	 * For TC358764 D2L IC, one of the requirement for power on
+	 * is to maintain an LP11 state in data and clock lanes during
+	 * power enabling and reset assertion. This change is to
+	 * achieve that.
+	 * */
+	if (mipi_dsi_pdata && mipi_dsi_pdata->dsi_client_power_save) {
+		u32 tmp_reg0c, tmp_rega8;
+		mipi_dsi_pdata->dsi_client_reset();
+		udelay(200);
+		/* backup register values */
+		tmp_reg0c = MIPI_INP(MIPI_DSI_BASE + 0x000c);
+		tmp_rega8 = MIPI_INP(MIPI_DSI_BASE + 0xA8);
+		/* Clear HS  mode assertion and related flags */
+		MIPI_OUTP(MIPI_DSI_BASE + 0x0c, 0x8000);
+		MIPI_OUTP(MIPI_DSI_BASE + 0xA8, 0x0);
+		wmb();
+		mdelay(5);
+		/* restore previous values */
+		MIPI_OUTP(MIPI_DSI_BASE + 0x0c, tmp_reg0c);
+		MIPI_OUTP(MIPI_DSI_BASE + 0xa8, tmp_rega8);
+		wmb();
+	}
+#endif /* CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11 */
 
 #if defined(CONFIG_FB_MSM_MIPI_MAGNA_OLED_VIDEO_WVGA_PT)
 	/* LP11 */
@@ -521,6 +569,7 @@ static int mipi_dsi_probe(struct platform_device *pdev)
 	pdata->on = mipi_dsi_on;
 	pdata->off = mipi_dsi_off;
 	pdata->fps_level_change = mipi_dsi_fps_level_change;
+	pdata->low_power_config = mipi_dsi_low_power_config;
 	pdata->late_init = mipi_dsi_late_init;
 	pdata->early_off = mipi_dsi_early_off;
 	pdata->next = pdev;
